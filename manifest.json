@@ -1,9 +1,12 @@
 {
-  "name": "YoutubeBlockRecommendations",
+  "name": "Youtube Block Recommendations",
   "description": "Youtube, block suggestions at the end of the video.",
   "manifest_version": 2,
   "version": "1.0",
-  "homepage_url": "http://semihcelikol.com",
+  "homepage_url": "https://github.com/semihcelikol/blockYoutubeRecommendations",
+  "icons": {
+    "128": "icons/128.png"
+  },
 
   "background": {
     "scripts": ["background.js"]
