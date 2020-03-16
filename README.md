@@ -1,2 +1,2 @@
-# blockYoutubeRecommendations
-Youtube block suggestions at the end of the video.
+# Youtube Block Recommendations
+Youtube, Recommendations at the end of the video prevents.
