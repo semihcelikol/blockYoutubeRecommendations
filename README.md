@@ -6,3 +6,5 @@ Firefox Add-Ons Link : https://addons.mozilla.org/tr/firefox/addon/block-youtube
 ![NonBlocked](https://addons.cdn.mozilla.net/user-media/previews/full/233/233974.png?modified=1584379131, "Non Blocked")
 
 ![Blocked](https://addons.cdn.mozilla.net/user-media/previews/full/233/233975.png?modified=1584379131, "Blocked")
+
+☕ You can thank me and support me by ordering a coffee :) https://www.buymeacoffee.com/semihc
