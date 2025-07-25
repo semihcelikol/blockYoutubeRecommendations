@@ -1,5 +1,5 @@
 {
-  "name": "YTNoRecs",
+  "name": "YTNoRecs - Block YouTube Recommendations",
   "description": "Turns off suggestions at the end of a video on YouTube.",
   "manifest_version": 3,
   "version": "1.2",
