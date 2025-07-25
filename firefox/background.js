@@ -13,12 +13,18 @@ function toggleCSS(tab) {
     if (title === TITLE_APPLY) {
       browser.pageAction.setIcon({tabId: tab.id, path: "icons/onIcon.png"});
       browser.pageAction.setTitle({tabId: tab.id, title: TITLE_REMOVE});
-      browser.tabs.insertCSS({code: CSS});
+      browser.scripting.insertCSS({
+        target: {tabId: tab.id},
+        css: CSS
+      }).catch(error => console.error('Insert CSS error:', error));
 
     } else {
       browser.pageAction.setIcon({tabId: tab.id, path: "icons/offIcon.png"});
       browser.pageAction.setTitle({tabId: tab.id, title: TITLE_APPLY});
-      browser.tabs.removeCSS({code: CSS});
+      browser.scripting.removeCSS({
+        target: {tabId: tab.id},
+        css: CSS
+      }).catch(error => console.error('Remove CSS error:', error));
     }
   }
 
