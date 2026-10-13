@@ -46,6 +46,25 @@ Tired of massive end-screen recommendation cards covering the video just as it's
 ### Manual Installation (For Developers)
 If you want to install the extension manually or contribute to the source code:
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/semihcelikol/blockYoutubeRecommendations.git](https://github.com/semihcelikol/blockYoutubeRecommendations.git)
+1. Clone the repository: `git clone https://github.com/semihcelikol/blockYoutubeRecommendations.git`
+2. **For Chrome / Brave / Edge:**
+   * Go to `chrome://extensions/`
+   * Enable **Developer mode** in the top right corner.
+   * Click **Load unpacked** and select the cloned folder.
+3. **For Firefox:**
+   * Go to `about:debugging#/runtime/this-firefox`
+   * Click **Load Temporary Add-on...** and select the `manifest.json` file inside the folder.
+
+---
+
+## 🤝 Support & Contribution
+
+If you find this extension helpful and want to support its continuous development, I'd highly appreciate a coffee! ☕
+
+<a href="https://www.buymeacoffee.com/semihc" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+Feel free to open an issue for bugs or feature requests, and pull requests are always welcome.
+
+<div align="center">
+  <p>Developed with ❤️ by <a href="https://semihcelikol.com/">Semih Çelikol</a></p>
+</div>
