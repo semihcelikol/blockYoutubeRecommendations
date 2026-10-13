@@ -12,57 +12,77 @@ function isYouTube(url) {
   }
 }
 
-/*
-Duruma göre CSS enjekte et veya kaldır.
-URL çubuğundaki ikonu ve başlığı güncelle.
-*/
-function toggleCSS(tab) {
+// Belirli bir sekmeye güncel durumu (Aktif/Pasif) uygular
+async function applyStateToTab(tabId, isActive) {
+  if (isActive) {
+    browser.pageAction.setIcon({tabId: tabId, path: "icons/onIcon.png"});
+    browser.pageAction.setTitle({tabId: tabId, title: TITLE_REMOVE});
+    browser.scripting.insertCSS({
+      target: {tabId: tabId},
+      css: CSS
+    }).catch(() => {}); // Sayfa yüklenmeden CSS eklenmeye çalışılırsa hatayı yut
+  } else {
+    browser.pageAction.setIcon({tabId: tabId, path: "icons/offIcon.png"});
+    browser.pageAction.setTitle({tabId: tabId, title: TITLE_APPLY});
+    browser.scripting.removeCSS({
+      target: {tabId: tabId},
+      css: CSS
+    }).catch(() => {});
+  }
+}
+
+// Butona tıklandığında global durumu değiştir ve tüm YouTube sekmelerine uygula
+browser.pageAction.onClicked.addListener(async (tab) => {
   if (!isYouTube(tab.url)) return;
 
-  let gettingTitle = browser.pageAction.getTitle({tabId: tab.id});
-  
-  gettingTitle.then((title) => {
-    if (title === TITLE_APPLY) {
-      browser.pageAction.setIcon({tabId: tab.id, path: "icons/onIcon.png"});
-      browser.pageAction.setTitle({tabId: tab.id, title: TITLE_REMOVE});
-      browser.scripting.insertCSS({
-        target: {tabId: tab.id},
-        css: CSS
-      }).catch(error => console.error('Insert CSS error:', error));
+  // Mevcut durumu storage'dan al
+  let data = await browser.storage.local.get(['isYTNoRecsActive']);
+  let newState = !data.isYTNoRecsActive; // Durumu tersine çevir (Toggle)
 
-    } else {
-      browser.pageAction.setIcon({tabId: tab.id, path: "icons/offIcon.png"});
-      browser.pageAction.setTitle({tabId: tab.id, title: TITLE_APPLY});
-      browser.scripting.removeCSS({
-        target: {tabId: tab.id},
-        css: CSS
-      }).catch(error => console.error('Remove CSS error:', error));
+  // Yeni durumu storage'a kaydet
+  await browser.storage.local.set({ isYTNoRecsActive: newState });
+
+  // Açık olan TÜM sekmeleri bul ve sadece YouTube olanlara yeni durumu anında uygula
+  let allTabs = await browser.tabs.query({});
+  for (let t of allTabs) {
+    if (t.url && isYouTube(t.url)) {
+      applyStateToTab(t.id, newState);
     }
-  });
-}
-
-// Sekme yüklendiğinde veya güncellendiğinde, sadece YouTube'daysak URL çubuğunda ikonu göster
-function handleTabUpdate(tabId, changeInfo, tab) {
-  if (tab.url && isYouTube(tab.url)) {
-    browser.pageAction.show(tab.id); // İkonu adres çubuğunda göster
-  } else {
-    browser.pageAction.hide(tab.id); // YouTube değilse adres çubuğundan gizle
-  }
-}
-
-// İlk yüklendiğinde tüm sekmeleri kontrol et
-browser.tabs.query({}).then((tabs) => {
-  for (let tab of tabs) {
-    if (tab.url) handleTabUpdate(tab.id, null, tab);
   }
 });
 
-// Sekme güncellemelerini dinle
-browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
+// Yeni sekme açıldığında veya sayfa güncellendiğinde çalışır
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Sayfa yüklenmesi tamamlandığında veya URL değiştiğinde
   if (changeInfo.status === 'complete' || changeInfo.url) {
-     handleTabUpdate(id, changeInfo, tab);
+    if (tab.url && isYouTube(tab.url)) {
+      browser.pageAction.show(tabId); // İkonu Firefox adres çubuğunda göster
+      
+      // Kayıtlı global durumu al
+      let data = await browser.storage.local.get(['isYTNoRecsActive']);
+      
+      // Eğer kullanıcı eklentiyi ilk defa kurduysa (undefined), varsayılan olarak Aktif (true) başlat
+      let isActive = data.isYTNoRecsActive !== undefined ? data.isYTNoRecsActive : true;
+      if (data.isYTNoRecsActive === undefined) {
+         browser.storage.local.set({ isYTNoRecsActive: true });
+      }
+      
+      applyStateToTab(tabId, isActive);
+    } else {
+      browser.pageAction.hide(tabId); // YouTube değilse adres çubuğundan gizle
+    }
   }
 });
 
-// Butona tıklandığında CSS işlemini tetikle
-browser.pageAction.onClicked.addListener(toggleCSS);
+// Eklenti ilk yüklendiğinde mevcut açık sekmeleri kontrol et
+browser.tabs.query({}).then(async (tabs) => {
+  let data = await browser.storage.local.get(['isYTNoRecsActive']);
+  let isActive = data.isYTNoRecsActive !== undefined ? data.isYTNoRecsActive : true;
+  
+  for (let tab of tabs) {
+    if (tab.url && isYouTube(tab.url)) {
+      browser.pageAction.show(tab.id);
+      applyStateToTab(tab.id, isActive);
+    }
+  }
+});
