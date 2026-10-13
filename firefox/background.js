@@ -1,15 +1,27 @@
-const CSS = ".ytp-ce-element.ytp-ce-element-show { opacity: 0; }";
-const TITLE_APPLY = "Blocked Recommendations ";
+const CSS = ".ytp-ce-element.ytp-ce-element-show { opacity: 0 !important; display: none !important; }";
+const TITLE_APPLY = "Blocked Recommendations";
 const TITLE_REMOVE = "UnBlocked Recommendations";
-const APPLICABLE_PROTOCOLS = ["http:", "https:"];
+
+// URL'in YouTube olup olmadığını güvenli şekilde kontrol eder
+function isYouTube(url) {
+  try {
+    const activeUrl = new URL(url);
+    return activeUrl.hostname.includes("youtube.com");
+  } catch (e) {
+    return false;
+  }
+}
 
 /*
-Toggle CSS: based on the current title, insert or remove the CSS.
-Update the page action's title and icon to reflect its state.
+Duruma göre CSS enjekte et veya kaldır.
+URL çubuğundaki ikonu ve başlığı güncelle.
 */
 function toggleCSS(tab) {
+  if (!isYouTube(tab.url)) return;
 
-  function gotTitle(title) {
+  let gettingTitle = browser.pageAction.getTitle({tabId: tab.id});
+  
+  gettingTitle.then((title) => {
     if (title === TITLE_APPLY) {
       browser.pageAction.setIcon({tabId: tab.id, path: "icons/onIcon.png"});
       browser.pageAction.setTitle({tabId: tab.id, title: TITLE_REMOVE});
@@ -26,51 +38,31 @@ function toggleCSS(tab) {
         css: CSS
       }).catch(error => console.error('Remove CSS error:', error));
     }
-  }
-
-  var gettingTitle = browser.pageAction.getTitle({tabId: tab.id});
-  gettingTitle.then(gotTitle);
+  });
 }
 
-/*
-Returns true only if the URL's protocol is in APPLICABLE_PROTOCOLS.
-*/
-function protocolIsApplicable(url) {
-  var anchor =  document.createElement('a');
-  anchor.href = url;
-  return APPLICABLE_PROTOCOLS.includes(anchor.protocol);
-}
-
-/*
-Initialize the page action: set icon and title, then show.
-Only operates on tabs whose URL's protocol is applicable.
-*/
-function initializePageAction(tab) {
-  if (protocolIsApplicable(tab.url)) {
-    browser.pageAction.setIcon({tabId: tab.id, path: "icons/offIcon.png"});
-    browser.pageAction.setTitle({tabId: tab.id, title: TITLE_APPLY});
-    browser.pageAction.show(tab.id);
+// Sekme yüklendiğinde veya güncellendiğinde, sadece YouTube'daysak URL çubuğunda ikonu göster
+function handleTabUpdate(tabId, changeInfo, tab) {
+  if (tab.url && isYouTube(tab.url)) {
+    browser.pageAction.show(tab.id); // İkonu adres çubuğunda göster
+  } else {
+    browser.pageAction.hide(tab.id); // YouTube değilse adres çubuğundan gizle
   }
 }
 
-/*
-When first loaded, initialize the page action for all tabs.
-*/
-var gettingAllTabs = browser.tabs.query({});
-gettingAllTabs.then((tabs) => {
+// İlk yüklendiğinde tüm sekmeleri kontrol et
+browser.tabs.query({}).then((tabs) => {
   for (let tab of tabs) {
-    initializePageAction(tab);
+    if (tab.url) handleTabUpdate(tab.id, null, tab);
   }
 });
 
-/*
-Each time a tab is updated, reset the page action for that tab.
-*/
+// Sekme güncellemelerini dinle
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-  initializePageAction(tab);
+  if (changeInfo.status === 'complete' || changeInfo.url) {
+     handleTabUpdate(id, changeInfo, tab);
+  }
 });
 
-/*
-Toggle CSS when the page action is clicked.
-*/
+// Butona tıklandığında CSS işlemini tetikle
 browser.pageAction.onClicked.addListener(toggleCSS);
