@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- Buraya oluşturduğumuz 1400x560 banner görselini ekleyebilirsin -->
-<img src="assets/ytnorecmarket1400x560" alt="YTNoRecs Banner" width="100%">
+<img src="assets/ytnorecmarket1400x560.png" alt="YTNoRecs Banner" width="100%">
 
 # YTNoRecs - Block YouTube Recommendations
 
