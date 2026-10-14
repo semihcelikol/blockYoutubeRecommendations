@@ -1,8 +1,7 @@
-const CSS = ".ytp-ce-element.ytp-ce-element-show { opacity: 0 !important; display: none !important; }";
+// background.js
 const TITLE_APPLY = "Blocked Recommendations";
 const TITLE_REMOVE = "UnBlocked Recommendations";
 
-// URL'in YouTube olup olmadığını güvenli şekilde kontrol eder
 function isYouTube(url) {
   try {
     const activeUrl = new URL(url);
@@ -12,64 +11,57 @@ function isYouTube(url) {
   }
 }
 
-// Belirli bir sekmeye güncel durumu (Aktif/Pasif) uygular
-async function applyStateToTab(tabId, isActive) {
+// İkonu günceller
+async function updateIcon(tabId, isActive) {
   if (isActive) {
     chrome.action.setIcon({tabId: tabId, path: "icons/onIcon.png"});
     chrome.action.setTitle({tabId: tabId, title: TITLE_REMOVE});
-    chrome.scripting.insertCSS({
-      target: {tabId: tabId},
-      css: CSS
-    }).catch(() => {}); // Hataları yut (Örn: sayfa tam yüklenmemişse)
   } else {
     chrome.action.setIcon({tabId: tabId, path: "icons/offIcon.png"});
     chrome.action.setTitle({tabId: tabId, title: TITLE_APPLY});
-    chrome.scripting.removeCSS({
-      target: {tabId: tabId},
-      css: CSS
-    }).catch(() => {});
   }
 }
 
-// Butona tıklandığında global durumu değiştir ve tüm YouTube sekmelerine uygula
+// Butona tıklandığında durumu Storage'a kaydet (content.js bunu otomatik algılayacak)
 chrome.action.onClicked.addListener(async (tab) => {
   if (!isYouTube(tab.url)) return;
 
-  // Mevcut durumu storage'dan al
   let data = await chrome.storage.local.get(['isYTNoRecsActive']);
-  let newState = !data.isYTNoRecsActive; // Durumu tersine çevir (Toggle)
-
-  // Yeni durumu storage'a kaydet
+  let newState = !data.isYTNoRecsActive; // Durumu tersine çevir
   await chrome.storage.local.set({ isYTNoRecsActive: newState });
 
-  // Açık olan TÜM sekmeleri bul ve sadece YouTube olanlara yeni durumu anında uygula
+  // Tüm açık YouTube sekmelerinin ikonunu anında güncelle
   let allTabs = await chrome.tabs.query({});
   for (let t of allTabs) {
     if (t.url && isYouTube(t.url)) {
-      applyStateToTab(t.id, newState);
+      updateIcon(t.id, newState);
     }
   }
 });
 
-// Yeni sekme açıldığında veya sayfa güncellendiğinde çalışır
+// Yeni sekme açıldığında veya geçiş yapıldığında kontrol et
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Sayfa yüklenmesi tamamlandığında veya URL değiştiğinde
-  if (changeInfo.status === 'complete' || changeInfo.url) {
+  if (tab.url && isYouTube(tab.url)) {
+    chrome.action.enable(tabId); // İkonu tıklanabilir yap
+    let data = await chrome.storage.local.get(['isYTNoRecsActive']);
+    let isActive = data.isYTNoRecsActive !== undefined ? data.isYTNoRecsActive : true;
+    updateIcon(tabId, isActive);
+  } else {
+    chrome.action.disable(tabId); // YouTube değilse ikonu soluklaştır/pasifleştir
+  }
+});
+
+// Service Worker (Arka plan) uyandığında mevcut sekmeleri kontrol et
+chrome.tabs.query({}).then(async (tabs) => {
+  let data = await chrome.storage.local.get(['isYTNoRecsActive']);
+  let isActive = data.isYTNoRecsActive !== undefined ? data.isYTNoRecsActive : true;
+  
+  for (let tab of tabs) {
     if (tab.url && isYouTube(tab.url)) {
-      chrome.action.enable(tabId); // YouTube ise butonu tıklanabilir yap
-      
-      // Kayıtlı global durumu al ve sekmeye uygula
-      let data = await chrome.storage.local.get(['isYTNoRecsActive']);
-      
-      // Eğer kullanıcı eklentiyi yeni kurduysa (undefined ise), varsayılan olarak Aktif (true) başlat
-      let isActive = data.isYTNoRecsActive !== undefined ? data.isYTNoRecsActive : true;
-      if (data.isYTNoRecsActive === undefined) {
-         chrome.storage.local.set({ isYTNoRecsActive: true });
-      }
-      
-      applyStateToTab(tabId, isActive);
+      chrome.action.enable(tab.id);
+      updateIcon(tab.id, isActive);
     } else {
-      chrome.action.disable(tabId); // YouTube değilse butonu soluklaştır
+      chrome.action.disable(tab.id);
     }
   }
 });

@@ -2,7 +2,7 @@
   "name": "YTNoRecs - Block YouTube Recommendations",
   "description": "Turns off suggestions at the end of a video on YouTube.",
   "manifest_version": 3,
-  "version": "1.0.0",
+  "version": "1.5",
   "author": "Semih Çelikol",
   "homepage_url": "https://github.com/semihcelikol/blockYoutubeRecommendations",
   "icons": {
@@ -15,10 +15,16 @@
     "default_icon": "icons/offIcon.png",
     "default_title": "Blocked Recommendations"
   },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
   "permissions": [
     "activeTab",
     "tabs",
-    "scripting",
     "storage"
   ]
 }
